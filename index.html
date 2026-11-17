@@ -230,7 +230,7 @@
     "사전보고에서 까였다!",
   ];
 
-  let player = "", n = 0, k = 0, rejectAt = null, busy = false, passRate = 0.5;
+  let player = "", n = 0, k = 0, rejectAt = [], cc = 0, busy = false, passRate = 0.5;
   // 특정 사원은 부문장 보고 통과 확률 40%. 실명이 공개 소스에 남지 않도록 SHA-256 해시로 비교
   const CURSED = "94ef40aec1f395657eb98c13d679c126e875cc1c3646fe82d01c5f2bfac490b0";
   async function sha256(s) {
@@ -269,10 +269,17 @@
     document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("active", s.id === id));
   }
 
-  // 보고 사이클 시작: 70% 확률로 이번 사이클 중 한 번 까임 이벤트 (발생 시점은 1 ~ n-1 중 무작위)
+  // 보고 사이클 시작: 까임 이벤트 기회 2번, 각 70% 확률 (발생 시점은 사이클 내 클릭 1 ~ n-1번째 중 무작위)
   function newCycle() {
     k = 0;
-    rejectAt = Math.random() < 0.7 ? randInt(1, n - 1) : null;
+    cc = 0;
+    rejectAt = [];
+    for (let i = 0; i < 2; i++) {
+      if (Math.random() >= 0.7) continue;
+      let t;
+      do { t = randInt(1, n - 1); } while (rejectAt.includes(t));
+      rejectAt.push(t);
+    }
     render();
   }
 
@@ -309,14 +316,14 @@
   async function onWrite() {
     if (busy) return;
     k += 1;
+    cc += 1;
     total += 1;
     typingFx();
     render();
     checkColleagues();
 
-    if (k === rejectAt) {
+    if (rejectAt.includes(cc)) {
       busy = true;
-      rejectAt = null;
       const msg = REJECTS[randInt(0, REJECTS.length - 1)];
       await modal({ icon: "😱", title: msg, body: "진행도가 절반으로 줄어듭니다…", tone: "bad" });
       k = Math.floor(k * 0.5);
