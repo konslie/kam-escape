@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>KAM 탈출 게임</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +22,7 @@
     --table: #c8a27a;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); touch-action: manipulation; }
   body {
     font-family: "Noto Sans KR", system-ui, sans-serif;
     min-height: 100vh;
@@ -47,6 +47,7 @@
     padding: 14px 20px; border: 0; border-radius: 12px;
     background: var(--accent); color: var(--accent-ink);
     transition: transform .08s, opacity .2s;
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
   }
   button:active { transform: scale(.97); }
   button:disabled { opacity: .4; cursor: not-allowed; }
