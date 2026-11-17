@@ -231,7 +231,7 @@
   ];
 
   let player = "", n = 0, k = 0, rejectAt = null, busy = false, passRate = 0.5;
-  // 특정 사원은 부문장 보고 통과 확률 5%. 실명이 공개 소스에 남지 않도록 SHA-256 해시로 비교
+  // 특정 사원은 부문장 보고 통과 확률 40%. 실명이 공개 소스에 남지 않도록 SHA-256 해시로 비교
   const CURSED = "94ef40aec1f395657eb98c13d679c126e875cc1c3646fe82d01c5f2bfac490b0";
   async function sha256(s) {
     const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
@@ -353,7 +353,7 @@
   async function startGame() {
     player = $("name").value.trim();
     if (!player) return;
-    passRate = (await sha256(player.replace(/\s/g, ""))) === CURSED ? 0.05 : 0.5;
+    passRate = (await sha256(player.replace(/\s/g, ""))) === CURSED ? 0.4 : 0.5;
     n = randInt(20, 40);
     busy = false;
     $("meName").textContent = player;
