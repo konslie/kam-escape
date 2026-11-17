@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KAM 탈출 게임</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #1f2430;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --room: #f8fafc;
+    --main: #eef4ff;
+    --accent: #2563eb;
+    --accent-ink: #ffffff;
+    --danger: #e11d48;
+    --ok: #16a34a;
+    --table: #c8a27a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: "Noto Sans KR", system-ui, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .screen { display: none; min-height: 100vh; padding: 24px 16px; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  /* 시작 화면 */
+  #start { justify-content: center; gap: 28px; }
+  .title { font-family: "Jua", sans-serif; font-size: clamp(44px, 11vw, 88px); margin: 0; letter-spacing: -1px; }
+  .title span { color: var(--accent); }
+  .start-form { display: flex; flex-direction: column; gap: 12px; width: min(320px, 100%); }
+  .start-form label { font-size: 14px; color: var(--muted); }
+  input[type=text] {
+    font: inherit; font-size: 18px; padding: 14px 16px;
+    border: 2px solid var(--line); border-radius: 12px; outline: none;
+  }
+  input[type=text]:focus { border-color: var(--accent); }
+  button {
+    font: inherit; font-weight: 700; font-size: 18px; cursor: pointer;
+    padding: 14px 20px; border: 0; border-radius: 12px;
+    background: var(--accent); color: var(--accent-ink);
+    transition: transform .08s, opacity .2s;
+  }
+  button:active { transform: scale(.97); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* 사무실 */
+  #office { gap: 16px; }
+  .hud { width: min(900px, 100%); display: flex; justify-content: space-between; align-items: baseline; }
+  .hud h2 { font-family: "Jua", sans-serif; font-weight: 400; font-size: 26px; margin: 0; }
+  .hud .who { color: var(--muted); font-size: 14px; }
+  .floor {
+    width: min(900px, 100%);
+    display: grid; gap: 6px; padding: 6px;
+    background: #d1d5db; border-radius: 14px;
+    grid-template-columns: 1fr 2fr 2fr 1fr;
+    grid-template-areas:
+      "boss main main meet"
+      "pantry main main storage";
+  }
+  .room {
+    background: var(--room); border-radius: 8px; padding: 10px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; color: var(--muted); font-size: 13px; min-height: 110px; text-align: center;
+  }
+  .room .ico { font-size: 28px; }
+  .r-boss { grid-area: boss; } .r-meet { grid-area: meet; }
+  .r-pantry { grid-area: pantry; } .r-storage { grid-area: storage; }
+  .r-main {
+    grid-area: main; background: var(--main); color: var(--ink);
+    justify-content: flex-start; padding: 12px; position: relative;
+  }
+  .r-main .label { font-weight: 700; font-size: 14px; align-self: flex-start; display: flex; gap: 8px; align-items: center; }
+  .badge { font-size: 11px; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 99px; }
+
+  .desk { display: grid; grid-template-rows: auto auto auto; gap: 6px; width: 100%; max-width: 420px; margin: 10px auto 4px; }
+  .seats { display: flex; justify-content: space-around; }
+  .table {
+    height: 70px; background: var(--table); border-radius: 14px;
+    box-shadow: inset 0 -6px 0 rgba(0,0,0,.08);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.85); font-size: 12px;
+  }
+  .seat { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 90px; position: relative; }
+  .seat .pc { font-size: 22px; line-height: 1; }
+  .seat .person { font-size: 30px; line-height: 1; }
+  .seats.bottom .seat { flex-direction: column-reverse; }
+  .seat .name { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
+  .seat.me .name { color: var(--accent); font-weight: 700; }
+  .seat.me .person { background: #dbeafe; border-radius: 50%; padding: 4px; box-shadow: 0 0 0 2px var(--accent); }
+  .seat.typing .person { animation: bob .18s; }
+  @keyframes bob { 50% { transform: translateY(-4px); } }
+  .pop {
+    position: absolute; top: 18px; left: 72%; font-size: 13px; font-weight: 700; color: var(--accent);
+    white-space: nowrap; pointer-events: none; animation: rise .7s forwards;
+  }
+  @keyframes rise { to { transform: translateY(-26px); opacity: 0; } }
+
+  .panel { width: min(900px, 100%); display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+  .gauge-head { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); }
+  .gauge { height: 22px; background: #f1f5f9; border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+  .gauge .fill {
+    height: 100%; width: 0%; background: var(--accent); border-radius: 99px;
+    transition: width .35s ease, background-color .3s;
+  }
+  .gauge.hit .fill { background: var(--danger); }
+  #write { font-size: 22px; padding: 18px; }
+
+  /* 모달 */
+  .modal {
+    position: fixed; inset: 0; background: rgba(15, 23, 42, .45);
+    display: none; align-items: center; justify-content: center; padding: 16px; z-index: 10;
+  }
+  .modal.show { display: flex; }
+  .card {
+    background: #fff; border-radius: 18px; padding: 28px 24px; width: min(420px, 100%);
+    text-align: center; display: flex; flex-direction: column; gap: 14px;
+    animation: pop .2s ease-out;
+  }
+  @keyframes pop { from { transform: scale(.9); opacity: 0; } }
+  .card .big { font-size: 48px; line-height: 1; }
+  .card h3 { font-family: "Jua", sans-serif; font-weight: 400; font-size: 28px; margin: 0; }
+  .card p { margin: 0; color: var(--muted); }
+  .card.bad h3 { color: var(--danger); }
+  .card.good h3 { color: var(--ok); }
+
+  /* 엔딩 */
+  #ending { justify-content: center; gap: 20px; text-align: center; }
+  #ending .success { font-family: "Jua", sans-serif; font-size: clamp(36px, 9vw, 64px); color: var(--ok); margin: 0; }
+  #ending .but {
+    font-family: "Jua", sans-serif; font-size: clamp(22px, 5.5vw, 34px); margin: 0;
+    opacity: 0; transition: opacity 1.2s;
+  }
+  #ending .but.show { opacity: 1; }
+  #ending button { opacity: 0; transition: opacity .6s; }
+  #ending button.show { opacity: 1; }
+
+  @media (max-width: 640px) {
+    .floor {
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas: "boss meet" "main main" "pantry storage";
+    }
+    .room { min-height: 70px; }
+    .seat { width: 70px; }
+    .seat .name { max-width: 70px; }
+  }
+</style>
+</head>
+<body>
+
+<section id="start" class="screen active">
+  <h1 class="title"><span>KAM</span> 탈출 게임</h1>
+  <form class="start-form" id="startForm">
+    <label for="name">사원명</label>
+    <input type="text" id="name" maxlength="10" placeholder="이름을 입력하세요" autocomplete="off">
+    <button type="submit" id="startBtn" disabled>업무시작</button>
+  </form>
+</section>
+
+<section id="office" class="screen">
+  <div class="hud">
+    <h2>KAM 탈출 게임</h2>
+    <span class="who" id="who"></span>
+  </div>
+  <div class="floor">
+    <div class="room r-boss"><span class="ico">👔</span>팀장실</div>
+    <div class="room r-meet"><span class="ico">📊</span>회의실</div>
+    <div class="room r-pantry"><span class="ico">☕</span>탕비실</div>
+    <div class="room r-storage"><span class="ico">📦</span>창고</div>
+    <div class="room r-main">
+      <div class="label">KAM팀 사무실 <span class="badge">현재 위치</span></div>
+      <div class="desk">
+        <div class="seats top">
+          <div class="seat me" id="meSeat"><span class="name" id="meName"></span><span class="person">🧑‍💻</span><span class="pc">🖥️</span></div>
+          <div class="seat"><span class="name">김과장</span><span class="person">👨‍💼</span><span class="pc">🖥️</span></div>
+        </div>
+        <div class="table">회의 테이블</div>
+        <div class="seats bottom">
+          <div class="seat"><span class="name">박대리</span><span class="person">👩‍💼</span><span class="pc">🖥️</span></div>
+          <div class="seat"><span class="name">최사원</span><span class="person">🧑‍💼</span><span class="pc">🖥️</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="gauge-head"><span>보고서 진행도</span><span id="pct">0%</span></div>
+    <div class="gauge" id="gauge"><div class="fill" id="fill"></div></div>
+    <button id="write">보고서 쓰기</button>
+  </div>
+</section>
+
+<section id="ending" class="screen">
+  <p class="success" id="successText">KAM 탈출 성공!</p>
+  <p class="but" id="butText">하지만 가영이는 KAM을 탈출하지 못했다 ㅠㅠ</p>
+  <button id="again">다시 하기</button>
+</section>
+
+<div class="modal" id="modal">
+  <div class="card" id="card">
+    <div class="big" id="mIcon"></div>
+    <h3 id="mTitle"></h3>
+    <p id="mBody"></p>
+    <button id="mBtn">확인</button>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const REJECTS = [
+    "보고 날짜가 밀렸다!",
+    "스토리라인을 다시 짜야 한다!",
+    "사전보고에서 까였다!",
+  ];
+
+  let player = "", n = 0, k = 0, rejectAt = null, busy = false;
+
+  function show(id) {
+    document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("active", s.id === id));
+  }
+
+  // 보고 사이클 시작: 20% 확률로 이번 사이클 중 한 번 까임 이벤트 (발생 시점은 1 ~ n-1 중 무작위)
+  function newCycle() {
+    k = 0;
+    rejectAt = Math.random() < 0.2 ? randInt(1, n - 1) : null;
+    render();
+  }
+
+  function render() {
+    const p = Math.round((k / n) * 100);
+    $("fill").style.width = p + "%";
+    $("pct").textContent = p + "%";
+  }
+
+  function modal({ icon, title, body, tone, btn = "확인", auto }) {
+    return new Promise((resolve) => {
+      $("card").className = "card " + (tone || "");
+      $("mIcon").textContent = icon;
+      $("mTitle").textContent = title;
+      $("mBody").textContent = body;
+      $("mBtn").textContent = btn;
+      $("mBtn").style.display = auto ? "none" : "";
+      $("modal").classList.add("show");
+      const close = () => { $("modal").classList.remove("show"); resolve(); };
+      if (auto) setTimeout(close, auto);
+      else $("mBtn").onclick = close;
+    });
+  }
+
+  function typingFx() {
+    const seat = $("meSeat");
+    seat.classList.remove("typing"); void seat.offsetWidth; seat.classList.add("typing");
+    const pop = document.createElement("span");
+    pop.className = "pop"; pop.textContent = "타닥!";
+    seat.appendChild(pop);
+    setTimeout(() => pop.remove(), 700);
+  }
+
+  async function onWrite() {
+    if (busy) return;
+    k += 1;
+    typingFx();
+    render();
+
+    if (k === rejectAt) {
+      busy = true;
+      rejectAt = null;
+      const msg = REJECTS[randInt(0, REJECTS.length - 1)];
+      await modal({ icon: "😱", title: msg, body: "진행도가 절반으로 줄어듭니다…", tone: "bad" });
+      k = Math.floor(k * 0.5);
+      $("gauge").classList.add("hit");
+      render();
+      setTimeout(() => $("gauge").classList.remove("hit"), 700);
+      busy = false;
+      return;
+    }
+
+    if (k >= n) {
+      busy = true;
+      await modal({ icon: "📑", title: "보고 진행 중…", body: "팀장님이 보고서를 보고 계십니다", auto: 1500 });
+      if (Math.random() < 0.5) {
+        await modal({ icon: "🔁", title: "재보고!", body: "처음부터 다시 써야 합니다…", tone: "bad", btn: "다시 쓰기" });
+        newCycle();
+        busy = false;
+      } else {
+        await modal({ icon: "✅", title: "보고 종료!", body: "드디어 보고가 끝났습니다", tone: "good", btn: "퇴근하기" });
+        ending();
+      }
+    }
+  }
+
+  function ending() {
+    $("successText").textContent = `${player}, KAM 탈출 성공!`;
+    $("butText").classList.remove("show");
+    $("again").classList.remove("show");
+    show("ending");
+    setTimeout(() => $("butText").classList.add("show"), 1500);
+    setTimeout(() => $("again").classList.add("show"), 2700);
+  }
+
+  function startGame() {
+    player = $("name").value.trim();
+    if (!player) return;
+    n = randInt(20, 40);
+    busy = false;
+    $("meName").textContent = player;
+    $("who").textContent = `사원 ${player}`;
+    newCycle();
+    show("office");
+  }
+
+  $("name").addEventListener("input", () => { $("startBtn").disabled = !$("name").value.trim(); });
+  $("startForm").addEventListener("submit", (e) => { e.preventDefault(); startGame(); });
+  $("write").addEventListener("click", onWrite);
+  $("again").addEventListener("click", () => { show("start"); $("name").focus(); });
+</script>
+</body>
+</html>
