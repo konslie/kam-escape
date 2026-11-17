@@ -96,6 +96,15 @@
   .seat.me .name { color: var(--accent); font-weight: 700; }
   .seat.me .person { background: #dbeafe; border-radius: 50%; padding: 4px; box-shadow: 0 0 0 2px var(--accent); }
   .seat.typing .person { animation: bob .18s; }
+  .seat.gone .name { text-decoration: line-through; opacity: .5; }
+  .seat.gone .pc { opacity: .3; }
+  .toast {
+    position: fixed; left: 50%; top: 16px; transform: translateX(-50%);
+    background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 99px;
+    font-size: 14px; white-space: nowrap; z-index: 5; pointer-events: none;
+    animation: toast 2.2s forwards;
+  }
+  @keyframes toast { 0% { opacity: 0; transform: translate(-50%, -8px); } 10%, 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
   @keyframes bob { 50% { transform: translateY(-4px); } }
   .pop {
     position: absolute; top: 18px; left: 72%; font-size: 13px; font-weight: 700; color: var(--accent);
@@ -170,21 +179,21 @@
     <span class="who" id="who"></span>
   </div>
   <div class="floor">
-    <div class="room r-boss"><span class="ico">👔</span>부문장실</div>
-    <div class="room r-meet"><span class="ico">📊</span>회의실</div>
-    <div class="room r-pantry"><span class="ico">☕</span>탕비실</div>
-    <div class="room r-storage"><span class="ico">📦</span>창고</div>
+    <div class="room r-boss"><span class="ico">📊</span>대회의실</div>
+    <div class="room r-meet"><span class="ico">👔</span>집무실</div>
+    <div class="room r-pantry"><span class="ico">🗂️</span>중회의실</div>
+    <div class="room r-storage"><span class="ico">☕</span>탕비실</div>
     <div class="room r-main">
       <div class="label">KAM팀 사무실 <span class="badge">현재 위치</span></div>
       <div class="desk">
         <div class="seats top">
           <div class="seat me" id="meSeat"><span class="name" id="meName"></span><span class="person">🧑‍💻</span><span class="pc">🖥️</span></div>
-          <div class="seat"><span class="name">김과장</span><span class="person">👨‍💼</span><span class="pc">🖥️</span></div>
+          <div class="seat npc"><span class="name">김책임</span><span class="person" data-face="👨‍💼">👨‍💼</span><span class="pc">🖥️</span></div>
         </div>
         <div class="table">회의 테이블</div>
         <div class="seats bottom">
-          <div class="seat"><span class="name">박대리</span><span class="person">👩‍💼</span><span class="pc">🖥️</span></div>
-          <div class="seat"><span class="name">최사원</span><span class="person">🧑‍💼</span><span class="pc">🖥️</span></div>
+          <div class="seat npc"><span class="name">박선임</span><span class="person" data-face="👩‍💼">👩‍💼</span><span class="pc">🖥️</span></div>
+          <div class="seat npc"><span class="name">최책임</span><span class="person" data-face="🧑‍💼">🧑‍💼</span><span class="pc">🖥️</span></div>
         </div>
       </div>
     </div>
@@ -221,6 +230,33 @@
   ];
 
   let player = "", n = 0, k = 0, rejectAt = null, busy = false;
+  let total = 0, leaves = []; // 동료 퇴근 시점(누적 클릭 수). 모두 n 미만이라 첫 보고 전에 반드시 퇴근
+
+  function setupColleagues() {
+    total = 0;
+    const seats = [...document.querySelectorAll(".seat.npc")];
+    seats.forEach((s) => {
+      s.classList.remove("gone");
+      const face = s.querySelector(".person");
+      face.textContent = face.dataset.face;
+    });
+    const times = new Set();
+    while (times.size < seats.length) times.add(randInt(Math.ceil(n * 0.3), Math.floor(n * 0.95)));
+    const sorted = [...times].sort((a, b) => a - b);
+    leaves = seats.sort(() => Math.random() - 0.5).map((seat, i) => ({ seat, at: sorted[i] }));
+  }
+
+  function checkColleagues() {
+    leaves.filter((l) => l.at === total).forEach(({ seat }) => {
+      seat.classList.add("gone");
+      seat.querySelector(".person").textContent = "🪑";
+      const t = document.createElement("div");
+      t.className = "toast";
+      t.textContent = `🏃 ${seat.querySelector(".name").textContent}님이 KAM을 탈출했습니다!`;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2200);
+    });
+  }
 
   function show(id) {
     document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("active", s.id === id));
@@ -266,8 +302,10 @@
   async function onWrite() {
     if (busy) return;
     k += 1;
+    total += 1;
     typingFx();
     render();
+    checkColleagues();
 
     if (k === rejectAt) {
       busy = true;
@@ -312,6 +350,7 @@
     busy = false;
     $("meName").textContent = player;
     $("who").textContent = `사원 ${player}`;
+    setupColleagues();
     newCycle();
     show("office");
   }
