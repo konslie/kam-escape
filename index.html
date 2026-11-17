@@ -170,7 +170,7 @@
     <span class="who" id="who"></span>
   </div>
   <div class="floor">
-    <div class="room r-boss"><span class="ico">👔</span>팀장실</div>
+    <div class="room r-boss"><span class="ico">👔</span>부문장실</div>
     <div class="room r-meet"><span class="ico">📊</span>회의실</div>
     <div class="room r-pantry"><span class="ico">☕</span>탕비실</div>
     <div class="room r-storage"><span class="ico">📦</span>창고</div>
@@ -284,7 +284,7 @@
 
     if (k >= n) {
       busy = true;
-      await modal({ icon: "📑", title: "보고 진행 중…", body: "팀장님이 보고서를 보고 계십니다", auto: 1500 });
+      await modal({ icon: "📑", title: "부문장 보고 중…", body: "부문장님이 보고서를 보고 계십니다", auto: 1500 });
       if (Math.random() < 0.5) {
         await modal({ icon: "🔁", title: "재보고!", body: "처음부터 다시 써야 합니다…", tone: "bad", btn: "다시 쓰기" });
         newCycle();
