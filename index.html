@@ -226,10 +226,10 @@
     document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("active", s.id === id));
   }
 
-  // 보고 사이클 시작: 20% 확률로 이번 사이클 중 한 번 까임 이벤트 (발생 시점은 1 ~ n-1 중 무작위)
+  // 보고 사이클 시작: 70% 확률로 이번 사이클 중 한 번 까임 이벤트 (발생 시점은 1 ~ n-1 중 무작위)
   function newCycle() {
     k = 0;
-    rejectAt = Math.random() < 0.2 ? randInt(1, n - 1) : null;
+    rejectAt = Math.random() < 0.7 ? randInt(1, n - 1) : null;
     render();
   }
 
