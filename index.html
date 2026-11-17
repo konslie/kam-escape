@@ -169,7 +169,7 @@
   <h1 class="title"><span>KAM</span> 탈출 게임</h1>
   <form class="start-form" id="startForm">
     <label for="name">사원명</label>
-    <input type="text" id="name" maxlength="10" placeholder="이름을 입력하세요" autocomplete="off">
+    <input type="text" id="name" maxlength="10" placeholder="본명을 입력하세요" autocomplete="off">
     <button type="submit" id="startBtn" disabled>업무시작</button>
   </form>
 </section>
@@ -230,7 +230,13 @@
     "사전보고에서 까였다!",
   ];
 
-  let player = "", n = 0, k = 0, rejectAt = null, busy = false;
+  let player = "", n = 0, k = 0, rejectAt = null, busy = false, passRate = 0.5;
+  // 특정 사원은 부문장 보고 통과 확률 5%. 실명이 공개 소스에 남지 않도록 SHA-256 해시로 비교
+  const CURSED = "94ef40aec1f395657eb98c13d679c126e875cc1c3646fe82d01c5f2bfac490b0";
+  async function sha256(s) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
   let total = 0, leaves = []; // 동료 퇴근 시점(누적 클릭 수). 모두 n 미만이라 첫 보고 전에 반드시 퇴근
 
   function setupColleagues() {
@@ -324,7 +330,7 @@
     if (k >= n) {
       busy = true;
       await modal({ icon: "📑", title: "부문장 보고 중…", body: "부문장님이 보고서를 보고 계십니다", auto: 1500 });
-      if (Math.random() < 0.5) {
+      if (Math.random() >= passRate) {
         await modal({ icon: "🔁", title: "재보고!", body: "처음부터 다시 써야 합니다…", tone: "bad", btn: "다시 쓰기" });
         newCycle();
         busy = false;
@@ -344,9 +350,10 @@
     setTimeout(() => $("again").classList.add("show"), 2700);
   }
 
-  function startGame() {
+  async function startGame() {
     player = $("name").value.trim();
     if (!player) return;
+    passRate = (await sha256(player.replace(/\s/g, ""))) === CURSED ? 0.05 : 0.5;
     n = randInt(20, 40);
     busy = false;
     $("meName").textContent = player;
